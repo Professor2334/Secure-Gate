@@ -114,6 +114,19 @@ One area I would refactor is the authentication orchestration logic inside serve
 
 As the application grows, this would become difficult to maintain. I would extract these responsibilities into dedicated service layers.
 
+# Resend Testing Limitation 
+
+During development, I used Resend’s default testing sender (onboarding@resend.dev) for transactional email delivery. One limitation I encountered was that Resend restricts this sender in testing mode, meaning verification emails do not reliably deliver to arbitrary external email addresses unless a custom domain is verified.
+
+This became noticeable while testing account creation and email verification flows across multiple devices and email accounts. Although the authentication logic, token generation, and email delivery code worked correctly, email delivery itself was constrained by the provider’s sandbox restrictions
+
+In a production environment, I would solve this by:
+	•	purchasing and verifying a custom domain in Resend
+	•	configuring SPF and DKIM DNS records
+	•	replacing the default sender with a verified domain sender
+
+    The agent can also be prompted to temporarily disable the verification lock by automatically marking newly registered users as verified in the database immediately after signup. Users will still see the “Email sent” flow even if emails are not delivered, but they will still be able to access the dashboard without clicking a verification link.
+
 
 # Part 5 — How This Changes How I Build
 
@@ -124,3 +137,5 @@ I learned that production authentication involves much more than login forms. Re
 I also learned the importance of engineering principles like Murphy’s Law, Defense in Depth, and Separation of Concerns. Many of the hardest problems I encountered were not UI problems but infrastructure and security problems.
 
 Going forward, I will approach full-stack systems with stronger defensive engineering practices, cleaner architecture boundaries, and greater awareness of how authentication systems behave under failure conditions.
+
+
