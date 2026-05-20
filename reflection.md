@@ -126,6 +126,7 @@ In a production environment, I would solve this by:
 	•	replacing the default sender with a verified domain sender
 
     The agent can also be prompted to temporarily disable the verification lock by automatically marking newly registered users as verified in the database immediately after signup. Users will still see the “Email sent” flow even if emails are not delivered, but they will still be able to access the dashboard without clicking a verification link.
+    But i configured nodemailer instead and used it for email verification,while leaving resend as the fallback email resend if somethings goes wrong with the nodemailer
 
 
 # Part 5 — How This Changes How I Build
