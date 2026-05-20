@@ -128,10 +128,7 @@ function LoginPageContent() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-slate-300" htmlFor="password">
-                Password
-              </label>
+            <div className="flex items-center justify-end">
               <Link
                 href="/forgot-password"
                 className="text-xs text-emerald-400 hover:underline font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded px-1"
