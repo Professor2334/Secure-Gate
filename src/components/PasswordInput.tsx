@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { getPasswordStrength } from "@/utils/password-strength";
 import type { PasswordStrength } from "@/utils/password-strength";
+import InputError from "@/components/InputError";
 
 interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -71,7 +72,11 @@ export default function PasswordInput({
               showStrength && value ? strengthId : null
             ].filter(Boolean).join(" ") || undefined
           }
-          className="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-[1.5px] focus:ring-emerald-500/30 transition duration-200"
+          className={`w-full px-4 py-2.5 bg-slate-900 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-[1.5px] transition duration-200 ${
+            error
+              ? "border-rose-500/50 focus:ring-rose-500/30 focus:border-rose-500/50"
+              : "border-slate-800 focus:ring-emerald-500/30 focus:border-slate-700"
+          }`}
           {...props}
         />
         <button
@@ -113,11 +118,7 @@ export default function PasswordInput({
         </div>
       )}
 
-      {error && (
-        <span className="text-xs text-rose-500 mt-1" id={errorId} role="alert">
-          {error}
-        </span>
-      )}
+      <InputError message={error} id={errorId} />
     </div>
   );
 }

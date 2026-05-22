@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RegisterSchema } from "@/schemas";
 import PasswordInput from "@/components/PasswordInput";
+import InputError from "@/components/InputError";
 import { register } from "@/app/actions";
 
 export default function RegisterPage() {
@@ -18,15 +19,65 @@ export default function RegisterPage() {
   });
 
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({});
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear validation error when editing
-    if (errors[name as keyof typeof errors]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    const newFormData = { ...formData, [name]: value };
+    setFormData(newFormData);
+
+    if (value.trim() !== "") {
+      // Remove error when typing begins
+      setErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[name as keyof typeof errors];
+        return updated;
+      });
+
+      // If form was already submitted, validate on change for formatting/strength errors
+      if (hasSubmitted) {
+        const validation = RegisterSchema.safeParse(newFormData);
+        if (!validation.success) {
+          const fieldErrors: typeof errors = {};
+          validation.error.issues.forEach((err) => {
+            const field = err.path[0] as keyof typeof errors;
+            if (field && !fieldErrors[field]) {
+              fieldErrors[field] = err.message;
+            }
+          });
+
+          setErrors((prev) => {
+            const updated = { ...prev };
+            if (fieldErrors[name as keyof typeof errors]) {
+              updated[name as keyof typeof errors] = fieldErrors[name as keyof typeof errors];
+            } else {
+              delete updated[name as keyof typeof errors];
+            }
+
+            // Also keep other validation errors
+            Object.keys(fieldErrors).forEach((key) => {
+              const k = key as keyof typeof errors;
+              if (fieldErrors[k]) {
+                updated[k] = fieldErrors[k];
+              }
+            });
+
+            return updated;
+          });
+        }
+      }
+    } else {
+      // If cleared, mark as empty
+      setErrors((prev) => ({ ...prev, [name]: "This field cannot be empty" }));
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (value.trim() === "") {
+      setErrors((prev) => ({ ...prev, [name]: "This field cannot be empty" }));
     }
   };
 
@@ -34,14 +85,16 @@ export default function RegisterPage() {
     e.preventDefault();
     setSubmitError(null);
     setSubmitSuccess(null);
+    setHasSubmitted(true);
 
     // Validate client-side
     const validation = RegisterSchema.safeParse(formData);
     if (!validation.success) {
       const fieldErrors: typeof errors = {};
       validation.error.issues.forEach((err) => {
-        if (err.path[0]) {
-          fieldErrors[err.path[0] as keyof typeof errors] = err.message;
+        const field = err.path[0] as keyof typeof errors;
+        if (field && !fieldErrors[field]) {
+          fieldErrors[field] = err.message;
         }
       });
       setErrors(fieldErrors);
@@ -56,6 +109,8 @@ export default function RegisterPage() {
       } else if (result?.success) {
         setSubmitSuccess(result.success);
         setFormData({ name: "", email: "", password: "" });
+        setErrors({});
+        setHasSubmitted(false);
       }
     });
   };
@@ -69,18 +124,18 @@ export default function RegisterPage() {
         </div>
 
         {submitError && (
-          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3.5 rounded-lg text-xs font-medium text-center" role="alert">
+          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3.5 rounded-lg text-xs font-medium text-center animate-slide-down" role="alert">
             {submitError}
           </div>
         )}
 
         {submitSuccess && (
-          <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3.5 rounded-lg text-xs font-medium text-center" role="status">
+          <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3.5 rounded-lg text-xs font-medium text-center animate-slide-down" role="status">
             {submitSuccess}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-slate-300" htmlFor="name">
               Name
@@ -92,17 +147,18 @@ export default function RegisterPage() {
               placeholder="John Doe"
               value={formData.name}
               onChange={handleChange}
+              onBlur={handleBlur}
               disabled={isPending}
               aria-invalid={!!errors.name}
               aria-describedby={errors.name ? "name-error" : undefined}
-              className="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-[1.5px] focus:ring-emerald-500/30 transition duration-200"
+              className={`w-full px-4 py-2.5 bg-slate-900 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-[1.5px] transition duration-200 ${
+                errors.name
+                  ? "border-rose-500/50 focus:ring-rose-500/30 focus:border-rose-500/50"
+                  : "border-slate-800 focus:ring-emerald-500/30 focus:border-slate-700"
+              }`}
               required
             />
-            {errors.name && (
-              <span className="text-xs text-rose-500 mt-1" id="name-error" role="alert">
-                {errors.name}
-              </span>
-            )}
+            <InputError message={errors.name} id="name-error" />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -116,17 +172,18 @@ export default function RegisterPage() {
               placeholder="name@example.com"
               value={formData.email}
               onChange={handleChange}
+              onBlur={handleBlur}
               disabled={isPending}
               aria-invalid={!!errors.email}
               aria-describedby={errors.email ? "email-error" : undefined}
-              className="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-[1.5px] focus:ring-emerald-500/30 transition duration-200"
+              className={`w-full px-4 py-2.5 bg-slate-900 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-[1.5px] transition duration-200 ${
+                errors.email
+                  ? "border-rose-500/50 focus:ring-rose-500/30 focus:border-rose-500/50"
+                  : "border-slate-800 focus:ring-emerald-500/30 focus:border-slate-700"
+              }`}
               required
             />
-            {errors.email && (
-              <span className="text-xs text-rose-500 mt-1" id="email-error" role="alert">
-                {errors.email}
-              </span>
-            )}
+            <InputError message={errors.email} id="email-error" />
           </div>
 
           <PasswordInput
@@ -135,6 +192,7 @@ export default function RegisterPage() {
             placeholder="••••••••"
             value={formData.password}
             onChange={handleChange}
+            onBlur={handleBlur}
             disabled={isPending}
             error={errors.password}
             showStrength={true}
