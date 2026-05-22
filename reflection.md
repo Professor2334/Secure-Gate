@@ -139,4 +139,9 @@ I also learned the importance of engineering principles like Murphy’s Law, Def
 
 Going forward, I will approach full-stack systems with stronger defensive engineering practices, cleaner architecture boundaries, and greater awareness of how authentication systems behave under failure conditions.
 
+# Things I went back to review and improve on
 
+• “I audited SecureGate against engineering laws and refactored weak areas.”
+ • “I improved defensive programming around redirects and auth recovery.”
+ • “I intentionally avoided unnecessary complexity using YAGNI.”
+ • “I separated concerns to improve scalability and maintainability.”

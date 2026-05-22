@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { passwordResetTokenRepository } from "@/database/repositories";
 import ResetPasswordForm from "./ResetPasswordForm";
 import Link from "next/link";
 
@@ -17,9 +17,7 @@ export default async function ResetPasswordPage({ params }: ResetPasswordPagePro
   const { token } = params;
 
   // Verify token server-side before showing the form
-  const existingToken = await prisma.passwordResetToken.findUnique({
-    where: { token },
-  });
+  const existingToken = await passwordResetTokenRepository.findByToken(token);
 
   const isValid = existingToken && new Date(existingToken.expires) > new Date();
 
@@ -51,7 +49,7 @@ export default async function ResetPasswordPage({ params }: ResetPasswordPagePro
           </div>
           <Link
             href="/forgot-password"
-            className="w-full mt-2 bg-white text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-white/20 transition duration-200 flex items-center justify-center"
+            className="w-full mt-2 bg-white text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-[1.5px] focus:ring-white/20 transition duration-200 flex items-center justify-center"
           >
             Request New Reset Link
           </Link>

@@ -48,7 +48,7 @@ export default function VerifyNoticeClient({ email }: VerifyNoticeClientProps) {
       <button
         onClick={handleResend}
         disabled={isPending}
-        className="w-full bg-white text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-950 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full bg-white text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-[1.5px] focus:ring-emerald-500/30 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {isPending ? (
           <>
@@ -82,7 +82,7 @@ export default function VerifyNoticeClient({ email }: VerifyNoticeClientProps) {
 
       <button
         onClick={() => signOut({ callbackUrl: "/login" })}
-        className="w-full bg-transparent hover:bg-slate-900 border border-slate-800 text-slate-300 font-medium py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-950 transition duration-200 text-sm"
+        className="w-full bg-transparent hover:bg-slate-900 border border-slate-800 text-slate-300 font-medium py-2.5 rounded-lg focus:outline-none focus:ring-[1.5px] focus:ring-emerald-500/30 transition duration-200 text-sm"
       >
         Log out and use another account
       </button>

@@ -1,12 +1,17 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
 import { RegisterSchema, ForgotPasswordSchema, ResetPasswordSchema } from "@/schemas";
 import { generateVerificationToken, generatePasswordResetToken } from "@/lib/tokens";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/mail";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { headers } from "next/headers";
+import { userRepository, verificationTokenRepository, passwordResetTokenRepository } from "@/database/repositories";
+
+function getClientIp(): string {
+  const headersList = headers();
+  return headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+}
 
 /**
  * Register action
@@ -20,11 +25,16 @@ export async function register(values: any) {
 
   const { name, email, password } = validatedFields.data;
 
+  // Rate Limiting by IP
+  const rateLimitCheck = await checkRateLimit(getClientIp(), "register");
+
+  if (!rateLimitCheck.success) {
+    return { error: "Too many registration attempts. Please try again later." };
+  }
+
   try {
     // Check if duplicate email
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+    const existingUser = await userRepository.findByEmail(email);
 
     if (existingUser) {
       return { error: "An account with this email already exists." };
@@ -33,20 +43,25 @@ export async function register(values: any) {
     // Hash password with 12 salt rounds
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // Generate verification token BEFORE creating user
+    const verificationToken = await generateVerificationToken(email);
+
     // Create user (emailVerified defaults to null/unverified)
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
+    const user = await userRepository.create({
+      name,
+      email,
+      password: hashedPassword,
     });
 
-    // Generate token
-    const verificationToken = await generateVerificationToken(user.email);
-
-    // Send email
-    await sendVerificationEmail(user.email, verificationToken.token);
+    // Send email — if this fails, roll back the created user and token
+    try {
+      await sendVerificationEmail(user.email, verificationToken.token);
+    } catch (emailError) {
+      console.error("[REGISTER EMAIL FAILURE] Cleaning up created resources...", emailError);
+      await verificationTokenRepository.deleteByToken(verificationToken.token).catch(() => {});
+      await userRepository.deleteByEmail(user.email).catch(() => {});
+      return { error: "Failed to send verification email. Please try again." };
+    }
 
     return { success: "Verification email sent. Please check your inbox." };
   } catch (error: any) {
@@ -63,10 +78,15 @@ export async function verifyEmail(token: string) {
     return { error: "Token is missing." };
   }
 
+  // Rate Limiting by IP
+  const rateLimitCheck = await checkRateLimit(getClientIp(), "verify-email");
+
+  if (!rateLimitCheck.success) {
+    return { error: "Too many verification attempts. Please try again later." };
+  }
+
   try {
-    const existingToken = await prisma.verificationToken.findUnique({
-      where: { token },
-    });
+    const existingToken = await verificationTokenRepository.findByToken(token);
 
     if (!existingToken) {
       return { error: "Verification token is invalid or has already been used." };
@@ -77,26 +97,17 @@ export async function verifyEmail(token: string) {
       return { error: "Verification token has expired. Please request a new one." };
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: existingToken.identifier },
-    });
+    const user = await userRepository.findByEmail(existingToken.identifier);
 
     if (!user) {
       return { error: "User account associated with this token was not found." };
     }
 
     // Mark user as verified
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        emailVerified: new Date(),
-      },
-    });
+    await userRepository.updateEmailVerified(user.id, new Date());
 
     // Delete token after successful use
-    await prisma.verificationToken.delete({
-      where: { token },
-    });
+    await verificationTokenRepository.deleteByToken(token);
 
     return { success: "Your email has been verified! You can now log in." };
   } catch (error) {
@@ -113,10 +124,15 @@ export async function resendVerification(email: string) {
     return { error: "Email address is required." };
   }
 
+  // Rate Limiting by IP
+  const rateLimitCheck = await checkRateLimit(getClientIp(), "resend-verification");
+
+  if (!rateLimitCheck.success) {
+    return { error: "Too many requests. Please try again later." };
+  }
+
   try {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await userRepository.findByEmail(email);
 
     if (!user) {
       // Return a successful generic message to prevent account enumeration leaks
@@ -150,18 +166,14 @@ export async function forgotPassword(values: any) {
   const { email } = validatedFields.data;
 
   // Rate Limiting by IP
-  const headersList = headers();
-  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
-  const rateLimitCheck = await checkRateLimit(ip, "forgot-password");
+  const rateLimitCheck = await checkRateLimit(getClientIp(), "forgot-password");
 
   if (!rateLimitCheck.success) {
     return { error: "Too many requests. Please try again in 10 minutes." };
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await userRepository.findByEmail(email);
 
     // CRITICAL SECURITY REQUIREMENT: Never reveal if the email exists. Always return success.
     if (!user) {
@@ -194,10 +206,15 @@ export async function resetPassword(values: any, token: string | null) {
 
   const { password } = validatedFields.data;
 
+  // Rate Limiting by IP
+  const rateLimitCheck = await checkRateLimit(getClientIp(), "reset-password");
+
+  if (!rateLimitCheck.success) {
+    return { error: "Too many password reset attempts. Please try again later." };
+  }
+
   try {
-    const existingToken = await prisma.passwordResetToken.findUnique({
-      where: { token },
-    });
+    const existingToken = await passwordResetTokenRepository.findByToken(token);
 
     if (!existingToken) {
       return { error: "Password reset token is invalid or has already been used." };
@@ -208,9 +225,7 @@ export async function resetPassword(values: any, token: string | null) {
       return { error: "Password reset token has expired. Please request a new link." };
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: existingToken.email },
-    });
+    const user = await userRepository.findByEmail(existingToken.email);
 
     if (!user) {
       return { error: "User account associated with this token was not found." };
@@ -220,17 +235,10 @@ export async function resetPassword(values: any, token: string | null) {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Update user password
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        password: hashedPassword,
-      },
-    });
+    await userRepository.updatePassword(user.id, hashedPassword);
 
     // Delete reset token
-    await prisma.passwordResetToken.delete({
-      where: { token },
-    });
+    await passwordResetTokenRepository.deleteByToken(token);
 
     return { success: "Password reset successful! You can now log in." };
   } catch (error) {

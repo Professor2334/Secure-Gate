@@ -20,7 +20,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/10 text-rose-400">
           <svg
             className="h-6 w-6"
-            fill="none; stroke=currentColor"
+            fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg"
@@ -44,7 +44,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
         <div className="flex flex-col gap-3">
           <button
             onClick={() => reset()}
-            className="w-full bg-white text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-white/20 transition duration-200 text-sm flex items-center justify-center gap-2"
+            className="w-full bg-white text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-[1.5px] focus:ring-white/20 transition duration-200 text-sm flex items-center justify-center gap-2"
           >
             Try Again
           </button>

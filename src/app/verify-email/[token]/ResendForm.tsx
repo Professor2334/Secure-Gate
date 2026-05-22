@@ -57,7 +57,7 @@ export default function ResendForm() {
               message ? messageId : null
             ].filter(Boolean).join(" ") || undefined
           }
-          className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-950 transition duration-200"
+          className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-[1.5px] focus:ring-emerald-500/30 transition duration-200"
           required
         />
       </div>
@@ -76,7 +76,7 @@ export default function ResendForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full bg-slate-800 hover:bg-slate-700 text-white font-medium py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-950 transition duration-200 text-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
+        className="w-full bg-slate-800 hover:bg-slate-700 text-white font-medium py-2 rounded-lg focus:outline-none focus:ring-[1.5px] focus:ring-emerald-500/30 transition duration-200 text-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
       >
         {isPending ? (
           <>

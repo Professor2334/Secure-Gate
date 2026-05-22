@@ -42,13 +42,13 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row gap-3.5 w-full max-w-sm">
           <Link
             href="/login"
-            className="flex-1 bg-white text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-950 transition duration-200 text-sm flex items-center justify-center"
+            className="flex-1 bg-white text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-[1.5px] focus:ring-emerald-500/30 transition duration-200 text-sm flex items-center justify-center"
           >
             Sign In
           </Link>
           <Link
             href="/register"
-            className="flex-1 bg-transparent hover:bg-slate-900 border border-slate-800 text-slate-300 font-semibold py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-950 transition duration-200 text-sm flex items-center justify-center"
+            className="flex-1 bg-transparent hover:bg-slate-900 border border-slate-800 text-slate-300 font-semibold py-2.5 rounded-lg focus:outline-none focus:ring-[1.5px] focus:ring-emerald-500/30 transition duration-200 text-sm flex items-center justify-center"
           >
             Create Account
           </Link>

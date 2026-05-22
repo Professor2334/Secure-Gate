@@ -7,6 +7,13 @@ import { signIn } from "next-auth/react";
 import { LoginSchema } from "@/schemas";
 import PasswordInput from "@/components/PasswordInput";
 
+function isValidCallbackUrl(url: string | null): boolean {
+  if (!url) return false;
+  if (!url.startsWith("/")) return false;
+  if (url.startsWith("//")) return false;
+  return true;
+}
+
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -26,7 +33,8 @@ function LoginPageContent() {
     ? "Invalid credentials"
     : searchParams.get("error");
 
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const rawCallbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl = isValidCallbackUrl(rawCallbackUrl) ? rawCallbackUrl! : "/dashboard";
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -117,7 +125,7 @@ function LoginPageContent() {
               disabled={isPending}
               aria-invalid={!!errors.email}
               aria-describedby={errors.email ? "email-error" : undefined}
-              className="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-950 transition duration-200"
+              className="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-[1.5px] focus:ring-emerald-500/30 transition duration-200"
               required
             />
             {errors.email && (
@@ -128,7 +136,10 @@ function LoginPageContent() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-between">
+              <label htmlFor="password" className="text-sm font-medium text-slate-300">
+                Password
+              </label>
               <Link
                 href="/forgot-password"
                 className="text-xs text-emerald-400 hover:underline font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded px-1"
@@ -139,6 +150,7 @@ function LoginPageContent() {
             <PasswordInput
               id="password"
               name="password"
+              label=""
               placeholder="••••••••"
               value={formData.password}
               onChange={handleChange}
@@ -152,7 +164,7 @@ function LoginPageContent() {
           <button
             type="submit"
             disabled={isPending}
-            className="w-full mt-2 bg-white text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-950 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full mt-2 bg-white text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-[1.5px] focus:ring-emerald-500/30 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isPending ? (
               <>

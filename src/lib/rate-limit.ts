@@ -53,4 +53,3 @@ export async function checkRateLimit(
     return { success: true };
   }
 }
-export default checkRateLimit;

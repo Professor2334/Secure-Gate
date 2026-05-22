@@ -1,10 +1,10 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { LoginSchema } from "@/schemas";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { headers } from "next/headers";
+import { userRepository } from "@/database/repositories";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -33,9 +33,7 @@ export const authOptions: NextAuthOptions = {
         const { email, password } = validatedFields.data;
 
         // Query user by email
-        const user = await prisma.user.findUnique({
-          where: { email },
-        });
+        const user = await userRepository.findByEmail(email);
 
         // Use generic auth error messages to prevent account existence disclosures
         if (!user || !user.password) {
@@ -65,10 +63,7 @@ export const authOptions: NextAuthOptions = {
         token.emailVerified = user.emailVerified;
       } else {
         // Query database to fetch the latest emailVerified status
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id },
-          select: { emailVerified: true },
-        });
+        const dbUser = await userRepository.findById(token.id);
         if (dbUser) {
           token.emailVerified = dbUser.emailVerified;
         }

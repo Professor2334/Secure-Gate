@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getPasswordStrength } from "@/utils/password-strength";
+import type { PasswordStrength } from "@/utils/password-strength";
 
 interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -20,10 +22,10 @@ export default function PasswordInput({
   ...props
 }: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const [strength, setStrength] = useState<"none" | "weak" | "fair" | "strong">("none");
+  const [strength, setStrength] = useState<PasswordStrength>("none");
 
   // Determine a unique ID if one wasn't provided
-  const inputId = id || "password-input";
+  const inputId = id ?? "password-input";
   const errorId = `${inputId}-error`;
   const strengthId = `${inputId}-strength`;
 
@@ -32,27 +34,7 @@ export default function PasswordInput({
       setStrength("none");
       return;
     }
-    if (!value) {
-      setStrength("none");
-      return;
-    }
-
-    const hasUppercase = /[A-Z]/.test(value);
-    const hasLowercase = /[a-z]/.test(value);
-    const hasNumber = /[0-9]/.test(value);
-    const hasSpecial = /[^A-Za-z0-9]/.test(value);
-
-    const conditionsCount = [hasUppercase, hasLowercase, hasNumber, hasSpecial].filter(Boolean).length;
-
-    if (value.length < 8) {
-      setStrength("weak");
-    } else if (conditionsCount >= 4) {
-      setStrength("strong");
-    } else if (conditionsCount >= 3) {
-      setStrength("fair");
-    } else {
-      setStrength("weak");
-    }
+    setStrength(getPasswordStrength(value));
   }, [value, showStrength]);
 
   const strengthColorMap = {
@@ -89,7 +71,7 @@ export default function PasswordInput({
               showStrength && value ? strengthId : null
             ].filter(Boolean).join(" ") || undefined
           }
-          className="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-950 transition duration-200"
+          className="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-[1.5px] focus:ring-emerald-500/30 transition duration-200"
           {...props}
         />
         <button

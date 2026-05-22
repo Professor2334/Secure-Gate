@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { prisma } from "@/lib/prisma";
+import { verificationTokenRepository, passwordResetTokenRepository } from "@/database/repositories";
 
 /**
  * Generates and stores a verification token for email validation.
@@ -11,22 +11,16 @@ export async function generateVerificationToken(email: string) {
   const expires = new Date(Date.now() + 15 * 60 * 1000);
 
   // Check if a verification token already exists for this email
-  const existingToken = await prisma.verificationToken.findFirst({
-    where: { identifier: email },
-  });
+  const existingToken = await verificationTokenRepository.findByIdentifier(email);
 
   if (existingToken) {
-    await prisma.verificationToken.delete({
-      where: { token: existingToken.token },
-    });
+    await verificationTokenRepository.deleteByToken(existingToken.token);
   }
 
-  const verificationToken = await prisma.verificationToken.create({
-    data: {
-      identifier: email,
-      token,
-      expires,
-    },
+  const verificationToken = await verificationTokenRepository.create({
+    identifier: email,
+    token,
+    expires,
   });
 
   return verificationToken;
@@ -42,22 +36,16 @@ export async function generatePasswordResetToken(email: string) {
   const expires = new Date(Date.now() + 60 * 60 * 1000);
 
   // Check if a password reset token already exists for this email
-  const existingToken = await prisma.passwordResetToken.findFirst({
-    where: { email },
-  });
+  const existingToken = await passwordResetTokenRepository.findByEmail(email);
 
   if (existingToken) {
-    await prisma.passwordResetToken.delete({
-      where: { token: existingToken.token },
-    });
+    await passwordResetTokenRepository.deleteByToken(existingToken.token);
   }
 
-  const passwordResetToken = await prisma.passwordResetToken.create({
-    data: {
-      email,
-      token,
-      expires,
-    },
+  const passwordResetToken = await passwordResetTokenRepository.create({
+    email,
+    token,
+    expires,
   });
 
   return passwordResetToken;
